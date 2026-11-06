@@ -58,3 +58,4 @@ desktop.ini
 # ─── Docker volumes / local data ─────────────────────────────────────────────
 postgres-data/
 redis-data/
+
