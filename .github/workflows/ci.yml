@@ -1,4 +1,9 @@
 name: Jira-Lite CI Pipeline
+# Required GitHub Actions Secrets (Settings > Secrets and variables > Actions):
+#   CI_JWT_SECRET           - Base64-encoded HMAC-SHA256 secret (>= 256 bits)
+#   CI_SEED_ADMIN_PASSWORD  - Password for seeded Admin account in CI
+#   CI_SEED_PM_PASSWORD     - Password for seeded PM account in CI
+#   CI_SEED_DEV_PASSWORD    - Password for seeded Developer account in CI
 
 on:
   push:
@@ -55,10 +60,10 @@ jobs:
         env:
           DB_USERNAME: jiralite
           DB_PASSWORD: jiralite_test_password
-          JWT_SECRET: bXlfc3VwZXJfc2VjcmV0X2tleV9mb3Jfand0X3Rva2VuX2dlbmVyYXRpb25fMjAyNg==
-          SEED_ADMIN_PASSWORD: Admin@TestPassword2026!
-          SEED_PM_PASSWORD: Pm@TestPassword2026!
-          SEED_DEV_PASSWORD: Dev@TestPassword2026!
+          JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.CI_SEED_ADMIN_PASSWORD }}
+          SEED_PM_PASSWORD: ${{ secrets.CI_SEED_PM_PASSWORD }}
+          SEED_DEV_PASSWORD: ${{ secrets.CI_SEED_DEV_PASSWORD }}
         run: ./mvnw test
 
       - name: Package JAR Artifact
@@ -66,10 +71,10 @@ jobs:
         env:
           DB_USERNAME: jiralite
           DB_PASSWORD: jiralite_test_password
-          JWT_SECRET: bXlfc3VwZXJfc2VjcmV0X2tleV9mb3Jfand0X3Rva2VuX2dlbmVyYXRpb25fMjAyNg==
-          SEED_ADMIN_PASSWORD: Admin@TestPassword2026!
-          SEED_PM_PASSWORD: Pm@TestPassword2026!
-          SEED_DEV_PASSWORD: Dev@TestPassword2026!
+          JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.CI_SEED_ADMIN_PASSWORD }}
+          SEED_PM_PASSWORD: ${{ secrets.CI_SEED_PM_PASSWORD }}
+          SEED_DEV_PASSWORD: ${{ secrets.CI_SEED_DEV_PASSWORD }}
         run: ./mvnw package -DskipTests
 
   frontend-build:

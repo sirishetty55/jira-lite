@@ -5,7 +5,7 @@ spring:
   application:
     name: jira-lite
 
-  # ── PostgreSQL ──────────────────────────────────────────────
+  # -- PostgreSQL --------------------------------------------------
   datasource:
     url: jdbc:postgresql://localhost:5432/jiralite
     username: ${DB_USERNAME}
@@ -17,34 +17,44 @@ spring:
       idle-timeout: 300000
       connection-timeout: 30000
 
-  # ── JPA / Hibernate ────────────────────────────────────────
+  # -- Flyway Database Migrations ----------------------------------
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # baseline-on-migrate stamps an existing schema (created by Hibernate) as
+    # version 0 on the very first Flyway run, then tracks future migrations
+    # normally. Safe for databases that pre-date Flyway adoption.
+    baseline-on-migrate: true
+    baseline-version: 0
+
+  # -- JPA / Hibernate ---------------------------------------------
   jpa:
     hibernate:
-      ddl-auto: update
+      # Flyway now owns the schema; Hibernate only validates entities match it.
+      ddl-auto: validate
     show-sql: false
     open-in-view: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
         jdbc:
           time_zone: UTC
 
-  # ── Redis ──────────────────────────────────────────────────
+  # -- Redis -------------------------------------------------------
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
-  # ── Cache ──────────────────────────────────────────────────
+  # -- Cache -------------------------------------------------------
   cache:
     type: redis
     redis:
       time-to-live: 600000
       cache-null-values: false
 
-  # ── Mail (configure for production) ────────────────────────
+  # -- Mail (configure for production) ----------------------------
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
@@ -57,13 +67,13 @@ spring:
           starttls:
             enable: true
 
-# ── JWT Configuration ──────────────────────────────────────
+# -- JWT Configuration -------------------------------------------
 app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-ms: 86400000   # 24 hours
 
-# ── Swagger / OpenAPI ──────────────────────────────────────
+# -- Swagger / OpenAPI -------------------------------------------
 springdoc:
   api-docs:
     path: /api-docs
@@ -72,7 +82,7 @@ springdoc:
     operations-sorter: method
     tags-sorter: alpha
 
-# ── Logging ────────────────────────────────────────────────
+# -- Logging -----------------------------------------------------
 logging:
   level:
     root: INFO
@@ -82,7 +92,7 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
-# ── Actuator & Health Checks ───────────────────────────────
+# -- Actuator & Health Checks ------------------------------------
 management:
   endpoints:
     web:
@@ -93,4 +103,3 @@ management:
       show-details: when-authorized
       probes:
         enabled: true
-

@@ -388,7 +388,7 @@ Interactive Swagger documentation is available at **`/swagger-ui.html`** when th
 Ensure PostgreSQL is listening on port `5432` and Redis on `6379`:
 ```sql
 CREATE DATABASE jiralite;
-CREATE USER jiralite WITH PASSWORD 'jiralite_secure_password';
+CREATE USER jiralite WITH PASSWORD '<your-secure-db-password>';
 GRANT ALL PRIVILEGES ON DATABASE jiralite TO jiralite;
 ```
 
@@ -397,14 +397,15 @@ GRANT ALL PRIVILEGES ON DATABASE jiralite TO jiralite;
 cd jira-lite
 
 # Set environment variables (Linux/macOS)
+# Generate a JWT secret: openssl rand -base64 64
 export DB_USERNAME=jiralite
-export DB_PASSWORD=jiralite_secure_password
-export JWT_SECRET=bXlfc3VwZXJfc2VjcmV0X2tleV9mb3Jfand0X3Rva2VuX2dlbmVyYXRpb25fMjAyNg==
-export SEED_ADMIN_PASSWORD=Admin@JiraLite2026!
-export SEED_PM_PASSWORD=Pm@JiraLite2026!
-export SEED_DEV_PASSWORD=Dev@JiraLite2026!
+export DB_PASSWORD=<your-secure-db-password>
+export JWT_SECRET=<base64-encoded-secret-min-256-bits>
+export SEED_ADMIN_PASSWORD=<strong-admin-password>
+export SEED_PM_PASSWORD=<strong-pm-password>
+export SEED_DEV_PASSWORD=<strong-dev-password>
 
-# Run backend (auto-creates tables and seeds default users)
+# Run backend (Flyway runs migrations, then seeds default users if DB is empty)
 ./mvnw spring-boot:run
 ```
 *(On Windows PowerShell, use `$env:DB_USERNAME="jiralite"`, etc., then `.\mvnw.cmd spring-boot:run`)*
