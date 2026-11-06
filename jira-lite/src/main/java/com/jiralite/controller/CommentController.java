@@ -49,8 +49,10 @@ public class CommentController {
     @Operation(summary = "List comments for an issue (paginated, latest first)")
     public ResponseEntity<ApiResponse<Page<CommentResponse>>> getComments(
             @PathVariable Long issueId,
+            @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(commentService.getCommentsByIssue(issueId, pageable)));
+        User currentUser = userService.getCurrentUser(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(commentService.getCommentsByIssue(issueId, currentUser, pageable)));
     }
 
     @PutMapping("/{commentId}")
@@ -61,7 +63,7 @@ public class CommentController {
             @Valid @RequestBody CreateCommentRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         User currentUser = userService.getCurrentUser(userDetails);
-        CommentResponse response = commentService.updateComment(commentId, request, currentUser);
+        CommentResponse response = commentService.updateComment(issueId, commentId, request, currentUser);
         return ResponseEntity.ok(ApiResponse.success("Comment updated successfully", response));
     }
 
@@ -72,7 +74,7 @@ public class CommentController {
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserDetails userDetails) {
         User currentUser = userService.getCurrentUser(userDetails);
-        commentService.deleteComment(commentId, currentUser);
+        commentService.deleteComment(issueId, commentId, currentUser);
         return ResponseEntity.ok(ApiResponse.success("Comment deleted successfully"));
     }
 }

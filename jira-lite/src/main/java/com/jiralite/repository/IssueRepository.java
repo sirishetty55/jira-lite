@@ -43,6 +43,19 @@ public interface IssueRepository extends JpaRepository<Issue, Long>, JpaSpecific
            "OR LOWER(i.issueKey) LIKE LOWER(CONCAT('%', :query, '%'))")
     Page<Issue> searchIssues(@Param("query") String query, Pageable pageable);
 
+    @Query("SELECT i FROM Issue i WHERE i.project = :project AND (" +
+           "LOWER(i.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(i.description) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(i.issueKey) LIKE LOWER(CONCAT('%', :query, '%')))")
+    Page<Issue> searchIssuesByProject(@Param("project") Project project, @Param("query") String query, Pageable pageable);
+
+    @Query("SELECT i FROM Issue i WHERE (i.project.owner = :user OR EXISTS " +
+           "(SELECT pm FROM ProjectMember pm WHERE pm.project = i.project AND pm.user = :user)) AND (" +
+           "LOWER(i.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(i.description) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(i.issueKey) LIKE LOWER(CONCAT('%', :query, '%')))")
+    Page<Issue> searchAccessibleIssues(@Param("user") User user, @Param("query") String query, Pageable pageable);
+
     long countByProject(Project project);
 
     long countByProjectAndStatus(Project project, IssueStatus status);
@@ -50,6 +63,14 @@ public interface IssueRepository extends JpaRepository<Issue, Long>, JpaSpecific
     long countByAssignee(User assignee);
 
     long countByStatus(IssueStatus status);
+
+    @Query("SELECT COUNT(i) FROM Issue i WHERE (i.project.owner = :user OR EXISTS " +
+           "(SELECT pm FROM ProjectMember pm WHERE pm.project = i.project AND pm.user = :user))")
+    long countAccessibleIssues(@Param("user") User user);
+
+    @Query("SELECT COUNT(i) FROM Issue i WHERE i.status = :status AND (i.project.owner = :user OR EXISTS " +
+           "(SELECT pm FROM ProjectMember pm WHERE pm.project = i.project AND pm.user = :user))")
+    long countAccessibleIssuesByStatus(@Param("user") User user, @Param("status") IssueStatus status);
 
     @Query("SELECT COUNT(i) FROM Issue i WHERE i.assignee = :user AND i.status NOT IN ('RESOLVED','CLOSED')")
     long countActiveByAssignee(@Param("user") User user);

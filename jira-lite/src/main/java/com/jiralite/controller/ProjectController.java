@@ -67,8 +67,11 @@ public class ProjectController {
 
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "Get project details including members and issue counts")
-    public ResponseEntity<ApiResponse<ProjectDetailResponse>> getProjectById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(projectService.getProjectById(id)));
+    public ResponseEntity<ApiResponse<ProjectDetailResponse>> getProjectById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User currentUser = userService.getCurrentUser(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(projectService.getProjectById(id, currentUser)));
     }
 
     @PutMapping("/{id:\\d+}")
@@ -110,8 +113,10 @@ public class ProjectController {
     @Operation(summary = "List all members of a project (paginated)")
     public ResponseEntity<ApiResponse<Page<ProjectMemberResponse>>> getProjectMembers(
             @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(projectService.getProjectMembers(id, pageable)));
+        User currentUser = userService.getCurrentUser(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(projectService.getProjectMembers(id, currentUser, pageable)));
     }
 
     @DeleteMapping("/{id:\\d+}/members/{userId:\\d+}")
@@ -131,8 +136,10 @@ public class ProjectController {
     @Operation(summary = "Get the audit activity log for a project (paginated)")
     public ResponseEntity<ApiResponse<Page<ActivityLogResponse>>> getProjectActivity(
             @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(activityLogService.getProjectActivity(id, pageable)));
+        User currentUser = userService.getCurrentUser(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(activityLogService.getProjectActivity(id, currentUser, pageable)));
     }
 }
 

@@ -6,7 +6,9 @@ import com.jiralite.entity.Comment;
 import com.jiralite.entity.Issue;
 import com.jiralite.entity.User;
 import com.jiralite.exception.AccessDeniedException;
+import com.jiralite.exception.BadRequestException;
 import com.jiralite.exception.ResourceNotFoundException;
+import com.jiralite.model.Role;
 import com.jiralite.repository.CommentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -74,6 +76,16 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
+    public Page<CommentResponse> getCommentsByIssue(Long issueId, User currentUser, Pageable pageable) {
+        Issue issue = issueService.findIssueById(issueId);
+        if (!projectService.isProjectMember(issue.getProject(), currentUser)) {
+            throw new AccessDeniedException("You do not have permission to view comments for this issue");
+        }
+        return commentRepository.findByIssueOrderByCreatedAtDesc(issue, pageable)
+                .map(CommentResponse::from);
+    }
+
+    @Transactional(readOnly = true)
     public Page<CommentResponse> getCommentsByIssue(Long issueId, Pageable pageable) {
         Issue issue = issueService.findIssueById(issueId);
         return commentRepository.findByIssueOrderByCreatedAtDesc(issue, pageable)
@@ -81,8 +93,11 @@ public class CommentService {
     }
 
     @Transactional
-    public CommentResponse updateComment(Long commentId, CreateCommentRequest request, User currentUser) {
+    public CommentResponse updateComment(Long issueId, Long commentId, CreateCommentRequest request, User currentUser) {
         Comment comment = findCommentById(commentId);
+        if (issueId != null && !comment.getIssue().getId().equals(issueId)) {
+            throw new BadRequestException("Comment does not belong to the specified issue");
+        }
         if (!comment.getAuthor().getId().equals(currentUser.getId())) {
             throw new AccessDeniedException("You can only edit your own comments");
         }
@@ -92,13 +107,26 @@ public class CommentService {
     }
 
     @Transactional
-    public void deleteComment(Long commentId, User currentUser) {
+    public CommentResponse updateComment(Long commentId, CreateCommentRequest request, User currentUser) {
+        return updateComment(null, commentId, request, currentUser);
+    }
+
+    @Transactional
+    public void deleteComment(Long issueId, Long commentId, User currentUser) {
         Comment comment = findCommentById(commentId);
+        if (issueId != null && !comment.getIssue().getId().equals(issueId)) {
+            throw new BadRequestException("Comment does not belong to the specified issue");
+        }
         if (!comment.getAuthor().getId().equals(currentUser.getId())
-                && currentUser.getRole() != com.jiralite.model.Role.ADMIN) {
+                && currentUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("You can only delete your own comments");
         }
         commentRepository.delete(comment);
+    }
+
+    @Transactional
+    public void deleteComment(Long commentId, User currentUser) {
+        deleteComment(null, commentId, currentUser);
     }
 
     private Comment findCommentById(Long id) {

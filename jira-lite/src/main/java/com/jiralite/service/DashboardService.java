@@ -40,12 +40,29 @@ public class DashboardService {
                 ? projectRepository.count()
                 : projectRepository.findProjectsByMember(currentUser, PageRequest.of(0, 1)).getTotalElements();
 
-        long totalIssues = issueRepository.count();
-        long openIssues = issueRepository.countByStatus(IssueStatus.OPEN);
-        long inProgressIssues = issueRepository.countByStatus(IssueStatus.IN_PROGRESS);
-        long inReviewIssues = issueRepository.countByStatus(IssueStatus.IN_REVIEW);
-        long resolvedIssues = issueRepository.countByStatus(IssueStatus.RESOLVED);
-        long closedIssues = issueRepository.countByStatus(IssueStatus.CLOSED);
+        long totalIssues;
+        long openIssues;
+        long inProgressIssues;
+        long inReviewIssues;
+        long resolvedIssues;
+        long closedIssues;
+
+        if (isAdmin) {
+            totalIssues = issueRepository.count();
+            openIssues = issueRepository.countByStatus(IssueStatus.OPEN);
+            inProgressIssues = issueRepository.countByStatus(IssueStatus.IN_PROGRESS);
+            inReviewIssues = issueRepository.countByStatus(IssueStatus.IN_REVIEW);
+            resolvedIssues = issueRepository.countByStatus(IssueStatus.RESOLVED);
+            closedIssues = issueRepository.countByStatus(IssueStatus.CLOSED);
+        } else {
+            totalIssues = issueRepository.countAccessibleIssues(currentUser);
+            openIssues = issueRepository.countAccessibleIssuesByStatus(currentUser, IssueStatus.OPEN);
+            inProgressIssues = issueRepository.countAccessibleIssuesByStatus(currentUser, IssueStatus.IN_PROGRESS);
+            inReviewIssues = issueRepository.countAccessibleIssuesByStatus(currentUser, IssueStatus.IN_REVIEW);
+            resolvedIssues = issueRepository.countAccessibleIssuesByStatus(currentUser, IssueStatus.RESOLVED);
+            closedIssues = issueRepository.countAccessibleIssuesByStatus(currentUser, IssueStatus.CLOSED);
+        }
+
         long myAssignedIssues = issueRepository.countActiveByAssignee(currentUser);
         long overdueIssues = issueRepository.countOverdueByAssignee(currentUser, LocalDate.now());
 

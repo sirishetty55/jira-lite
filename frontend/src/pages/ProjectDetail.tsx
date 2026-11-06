@@ -115,6 +115,8 @@ export const ProjectDetail: React.FC = () => {
       return;
     }
 
+    const previousIssues = [...issues];
+
     // Optimistically update board
     setIssues((prev) =>
       prev.map((i) => (i.id === draggedIssueId ? { ...i, status: newStatus } : i))
@@ -123,11 +125,13 @@ export const ProjectDetail: React.FC = () => {
     try {
       await issuesApi.updateStatus(draggedIssueId, newStatus);
       success(`Moved ${targetIssue.issueKey} to ${newStatus.replace('_', ' ')}`);
-      // Refresh activity in background
-      projectsApi.getActivity(projectId, 0, 30).then((res) => setActivity(res.content));
-    } catch {
-      error('Failed to update status');
-      fetchProjectData();
+      // Refresh activity in background without reloading spinner
+      projectsApi.getActivity(projectId, 0, 30).then((res) => setActivity(res.content)).catch(() => {});
+    } catch (err: unknown) {
+      // Immediate rollback to prior state
+      setIssues(previousIssues);
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      error(axiosErr.response?.data?.message || 'Failed to update issue status');
     } finally {
       setDraggedIssueId(null);
     }

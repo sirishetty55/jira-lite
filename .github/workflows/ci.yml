@@ -1,0 +1,111 @@
+name: Jira-Lite CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-test-and-build:
+    name: Backend CI (Java 21 · Spring Boot)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: jiralite
+          POSTGRES_USER: jiralite
+          POSTGRES_PASSWORD: jiralite_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Grant execute permission for Maven wrapper
+        run: chmod +x jira-lite/mvnw
+
+      - name: Run Backend Tests
+        working-directory: ./jira-lite
+        env:
+          DB_USERNAME: jiralite
+          DB_PASSWORD: jiralite_test_password
+          JWT_SECRET: bXlfc3VwZXJfc2VjcmV0X2tleV9mb3Jfand0X3Rva2VuX2dlbmVyYXRpb25fMjAyNg==
+          SEED_ADMIN_PASSWORD: Admin@TestPassword2026!
+          SEED_PM_PASSWORD: Pm@TestPassword2026!
+          SEED_DEV_PASSWORD: Dev@TestPassword2026!
+        run: ./mvnw test
+
+      - name: Package JAR Artifact
+        working-directory: ./jira-lite
+        env:
+          DB_USERNAME: jiralite
+          DB_PASSWORD: jiralite_test_password
+          JWT_SECRET: bXlfc3VwZXJfc2VjcmV0X2tleV9mb3Jfand0X3Rva2VuX2dlbmVyYXRpb25fMjAyNg==
+          SEED_ADMIN_PASSWORD: Admin@TestPassword2026!
+          SEED_PM_PASSWORD: Pm@TestPassword2026!
+          SEED_DEV_PASSWORD: Dev@TestPassword2026!
+        run: ./mvnw package -DskipTests
+
+  frontend-build:
+    name: Frontend CI (React 19 · TypeScript · Vite 8)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Type Check and Production Build
+        working-directory: ./frontend
+        run: npm run build
+
+  docker-compose-validation:
+    name: Docker Compose Syntax Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy sample environment file
+        run: cp .env.example .env
+
+      - name: Validate Docker Compose Configuration
+        run: docker compose --env-file .env config --quiet
+

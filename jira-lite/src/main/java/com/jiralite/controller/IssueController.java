@@ -62,15 +62,20 @@ public class IssueController {
             @PathVariable Long projectId,
             @RequestParam(required = false) IssueStatus status,
             @RequestParam(required = false) String search,
+            @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {
+        User currentUser = userService.getCurrentUser(userDetails);
         return ResponseEntity.ok(ApiResponse.success(
-                issueService.getIssuesByProject(projectId, status, search, pageable)));
+                issueService.getIssuesByProject(projectId, status, search, currentUser, pageable)));
     }
 
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "Get full issue details by ID")
-    public ResponseEntity<ApiResponse<IssueDetailResponse>> getIssueById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(issueService.getIssueById(id)));
+    public ResponseEntity<ApiResponse<IssueDetailResponse>> getIssueById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User currentUser = userService.getCurrentUser(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(issueService.getIssueById(id, currentUser)));
     }
 
     @PutMapping("/{id:\\d+}")
@@ -117,11 +122,13 @@ public class IssueController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Full-text search across issue title, description, and key")
+    @Operation(summary = "Full-text search across accessible issues")
     public ResponseEntity<ApiResponse<Page<IssueResponse>>> searchIssues(
             @RequestParam String query,
+            @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(issueService.searchIssues(query, pageable)));
+        User currentUser = userService.getCurrentUser(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(issueService.searchIssues(query, currentUser, pageable)));
     }
 
     @GetMapping("/my")
@@ -137,8 +144,10 @@ public class IssueController {
     @Operation(summary = "Get the audit activity log for an issue (paginated)")
     public ResponseEntity<ApiResponse<Page<ActivityLogResponse>>> getIssueActivity(
             @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(activityLogService.getIssueActivity(id, pageable)));
+        User currentUser = userService.getCurrentUser(userDetails);
+        return ResponseEntity.ok(ApiResponse.success(activityLogService.getIssueActivity(id, currentUser, pageable)));
     }
 }
 

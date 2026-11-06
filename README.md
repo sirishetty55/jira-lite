@@ -14,7 +14,8 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)](https://redis.io/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![Tests](https://img.shields.io/badge/Tests-14%2F14%20Passing-brightgreen?logo=junit5&logoColor=white)](https://junit.org/junit5/)
+[![CI Pipeline](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/Tests-27%2F27%20Passing-brightgreen?logo=junit5&logoColor=white)](https://junit.org/junit5/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 [Features](#-key-features) • [Screenshots](#-application-screenshots) • [Architecture](#-system-architecture) • [Database Schema](#-database-er-diagram) • [Auth & RBAC](#-authentication--role-based-authorization) • [API Spec](#-api-documentation) • [Setup](#-installation--setup) • [Testing](#-testing)
@@ -486,12 +487,15 @@ cd jira-lite
 [INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
 [INFO] Running com.jiralite.service.ProjectServiceTest
 [INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.jiralite.service.SecurityAndAuthorizationTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
 [INFO] -------------------------------------------------------
-[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
 
-- **Zero External Dependencies**: Tests run against an isolated in-memory **H2 database** with `@ActiveProfiles("test")`.
+- **Security & RBAC Test Suite (`SecurityAndAuthorizationTest`)**: Validates cross-project isolation, assignee membership checks, non-owner PM mutation guards, scoped issue search, comment authorization, and self-deactivation prevention.
+- **Zero External Dependencies**: Unit & service tests run against an isolated in-memory **H2 database** with `@ActiveProfiles("test")`.
 - **Frontend Verification**: Fully passes `tsc -b && vite build` (2,139 modules transformed, 0 TypeScript errors).
 
 ---

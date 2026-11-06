@@ -50,7 +50,7 @@ public class ProjectService {
     }
 
     @Transactional
-    @CacheEvict(value = "projects", allEntries = true)
+    @CacheEvict(value = {"projects", "dashboard"}, allEntries = true)
     public ProjectResponse createProject(CreateProjectRequest request, User currentUser) {
         if (currentUser.getRole() != Role.ADMIN && currentUser.getRole() != Role.PROJECT_MANAGER) {
             throw new AccessDeniedException("Only Admins and Project Managers can create projects");
@@ -82,12 +82,29 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
+    public ProjectDetailResponse getProjectById(Long id, User currentUser) {
+        ProjectDetailResponse response = getCachedProjectDetail(id);
+        if (currentUser.getRole() != Role.ADMIN) {
+            Project project = findProjectById(id);
+            if (!isProjectMember(project, currentUser)) {
+                throw new AccessDeniedException("You do not have permission to view this project");
+            }
+        }
+        return response;
+    }
+
+    @Transactional(readOnly = true)
     @Cacheable(value = "projects", key = "#id")
-    public ProjectDetailResponse getProjectById(Long id) {
+    public ProjectDetailResponse getCachedProjectDetail(Long id) {
         Project project = findProjectById(id);
         List<ProjectMember> members = memberRepository.findByProject(project, Pageable.unpaged()).getContent();
         long issueCount = projectRepository.countIssuesByProjectId(id);
         return ProjectDetailResponse.from(project, members, issueCount);
+    }
+
+    @Transactional(readOnly = true)
+    public ProjectDetailResponse getProjectById(Long id) {
+        return getCachedProjectDetail(id);
     }
 
     @Transactional(readOnly = true)
@@ -104,10 +121,12 @@ public class ProjectService {
     }
 
     @Transactional
-    @CacheEvict(value = "projects", key = "#id")
+    @CacheEvict(value = {"projects", "dashboard"}, allEntries = true)
     public ProjectResponse updateProject(Long id, UpdateProjectRequest request, User currentUser) {
         Project project = findProjectById(id);
-        verifyProjectAccess(project, currentUser);
+        if (currentUser.getRole() != Role.ADMIN && !project.getOwner().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("Only Admins or the project owner can update project metadata");
+        }
 
         project.setName(request.name());
         project.setDescription(request.description());
@@ -122,7 +141,7 @@ public class ProjectService {
     }
 
     @Transactional
-    @CacheEvict(value = "projects", key = "#id")
+    @CacheEvict(value = {"projects", "dashboard", "issues"}, allEntries = true)
     public void deleteProject(Long id, User currentUser) {
         Project project = findProjectById(id);
         if (currentUser.getRole() != Role.ADMIN && !project.getOwner().getId().equals(currentUser.getId())) {
@@ -132,10 +151,12 @@ public class ProjectService {
     }
 
     @Transactional
-    @CacheEvict(value = "projects", key = "#projectId")
+    @CacheEvict(value = {"projects", "dashboard"}, allEntries = true)
     public ProjectMemberResponse addMember(Long projectId, AddProjectMemberRequest request, User currentUser) {
         Project project = findProjectById(projectId);
-        verifyProjectAccess(project, currentUser);
+        if (currentUser.getRole() != Role.ADMIN && !project.getOwner().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("Only Admins or the project owner can manage project members");
+        }
 
         User newMember = userService.findUserById(request.userId());
 
@@ -160,10 +181,12 @@ public class ProjectService {
     }
 
     @Transactional
-    @CacheEvict(value = "projects", key = "#projectId")
+    @CacheEvict(value = {"projects", "dashboard"}, allEntries = true)
     public void removeMember(Long projectId, Long userId, User currentUser) {
         Project project = findProjectById(projectId);
-        verifyProjectAccess(project, currentUser);
+        if (currentUser.getRole() != Role.ADMIN && !project.getOwner().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("Only Admins or the project owner can manage project members");
+        }
 
         if (project.getOwner().getId().equals(userId)) {
             throw new BadRequestException("Cannot remove the project owner");
@@ -174,6 +197,15 @@ public class ProjectService {
 
         activityLogService.log("MEMBER_REMOVED", "PROJECT", project.getId(),
                 "Removed " + member.getEmail() + " from project", project, null, currentUser);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProjectMemberResponse> getProjectMembers(Long projectId, User currentUser, Pageable pageable) {
+        Project project = findProjectById(projectId);
+        if (!isProjectMember(project, currentUser)) {
+            throw new AccessDeniedException("You do not have permission to view members of this project");
+        }
+        return memberRepository.findByProject(project, pageable).map(ProjectMemberResponse::from);
     }
 
     @Transactional(readOnly = true)

@@ -51,8 +51,11 @@ public class UserController {
     @DeleteMapping("/{id:\\d+}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Deactivate a user account (Admin only)")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User currentUser = userService.getCurrentUser(userDetails);
+        userService.deleteUser(id, currentUser);
         return ResponseEntity.ok(ApiResponse.success("User deactivated successfully"));
     }
 }

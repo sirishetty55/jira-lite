@@ -2,6 +2,7 @@ package com.jiralite.service;
 
 import com.jiralite.dto.response.UserResponse;
 import com.jiralite.entity.User;
+import com.jiralite.exception.BadRequestException;
 import com.jiralite.exception.ResourceNotFoundException;
 import com.jiralite.repository.UserRepository;
 import org.springframework.data.domain.Page;
@@ -41,10 +42,18 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(Long id) {
+    public void deleteUser(Long id, User currentUser) {
+        if (currentUser != null && currentUser.getId().equals(id)) {
+            throw new BadRequestException("You cannot deactivate your own account");
+        }
         User user = findUserById(id);
         user.setActive(false);
         userRepository.save(user);
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        deleteUser(id, null);
     }
 
     @Transactional(readOnly = true)

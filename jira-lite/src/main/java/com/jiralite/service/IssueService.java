@@ -10,8 +10,10 @@ import com.jiralite.entity.Issue;
 import com.jiralite.entity.Project;
 import com.jiralite.entity.User;
 import com.jiralite.exception.AccessDeniedException;
+import com.jiralite.exception.BadRequestException;
 import com.jiralite.exception.ResourceNotFoundException;
 import com.jiralite.model.IssueStatus;
+import com.jiralite.model.Role;
 import com.jiralite.repository.CommentRepository;
 import com.jiralite.repository.IssueRepository;
 import org.springframework.cache.annotation.CacheEvict;
@@ -49,7 +51,7 @@ public class IssueService {
     }
 
     @Transactional
-    @CacheEvict(value = {"issues", "dashboard"}, allEntries = true)
+    @CacheEvict(value = {"issues", "dashboard", "projects"}, allEntries = true)
     public IssueResponse createIssue(Long projectId, CreateIssueRequest request, User currentUser) {
         Project project = projectService.findProjectById(projectId);
 
@@ -65,6 +67,9 @@ public class IssueService {
         User assignee = null;
         if (request.assigneeId() != null) {
             assignee = userService.findUserById(request.assigneeId());
+            if (!projectService.isProjectMember(project, assignee)) {
+                throw new BadRequestException("Assignee must be a member of the project");
+            }
         }
 
         Issue issue = Issue.builder()
@@ -95,11 +100,49 @@ public class IssueService {
     }
 
     @Transactional(readOnly = true)
+    public IssueDetailResponse getIssueById(Long id, User currentUser) {
+        IssueDetailResponse response = getCachedIssueDetail(id);
+        if (currentUser.getRole() != Role.ADMIN) {
+            Project project = projectService.findProjectById(response.projectId());
+            if (!projectService.isProjectMember(project, currentUser)) {
+                throw new AccessDeniedException("You do not have permission to view this issue");
+            }
+        }
+        return response;
+    }
+
+    @Transactional(readOnly = true)
     @Cacheable(value = "issues", key = "#id")
-    public IssueDetailResponse getIssueById(Long id) {
+    public IssueDetailResponse getCachedIssueDetail(Long id) {
         Issue issue = findIssueById(id);
         long commentCount = commentRepository.countByIssue(issue);
         return IssueDetailResponse.from(issue, commentCount);
+    }
+
+    @Transactional(readOnly = true)
+    public IssueDetailResponse getIssueById(Long id) {
+        return getCachedIssueDetail(id);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<IssueResponse> getIssuesByProject(Long projectId, IssueStatus status,
+                                                   String search, User currentUser, Pageable pageable) {
+        Project project = projectService.findProjectById(projectId);
+        if (!projectService.isProjectMember(project, currentUser)) {
+            throw new AccessDeniedException("You do not have permission to view issues for this project");
+        }
+
+        if (status != null) {
+            return issueRepository.findByProjectAndStatus(project, status, pageable)
+                    .map(IssueResponse::from);
+        }
+
+        if (search != null && !search.isBlank()) {
+            return issueRepository.searchIssuesByProject(project, search, pageable)
+                    .map(IssueResponse::from);
+        }
+
+        return issueRepository.findByProject(project, pageable).map(IssueResponse::from);
     }
 
     @Transactional(readOnly = true)
@@ -113,7 +156,8 @@ public class IssueService {
         }
 
         if (search != null && !search.isBlank()) {
-            return issueRepository.searchIssues(search, pageable).map(IssueResponse::from);
+            return issueRepository.searchIssuesByProject(project, search, pageable)
+                    .map(IssueResponse::from);
         }
 
         return issueRepository.findByProject(project, pageable).map(IssueResponse::from);
@@ -132,6 +176,9 @@ public class IssueService {
         User assignee = null;
         if (request.assigneeId() != null) {
             assignee = userService.findUserById(request.assigneeId());
+            if (!projectService.isProjectMember(issue.getProject(), assignee)) {
+                throw new BadRequestException("Assignee must be a member of the project");
+            }
         }
 
         issue.setTitle(request.title());
@@ -182,6 +229,9 @@ public class IssueService {
         User assignee = null;
         if (request.assigneeId() != null) {
             assignee = userService.findUserById(request.assigneeId());
+            if (!projectService.isProjectMember(issue.getProject(), assignee)) {
+                throw new BadRequestException("Assignee must be a member of the project");
+            }
 
             if (!assignee.getId().equals(currentUser.getId())) {
                 notificationService.create(assignee, "ISSUE_ASSIGNED",
@@ -202,11 +252,19 @@ public class IssueService {
     }
 
     @Transactional
-    @CacheEvict(value = {"issues", "dashboard"}, allEntries = true)
+    @CacheEvict(value = {"issues", "dashboard", "projects"}, allEntries = true)
     public void deleteIssue(Long id, User currentUser) {
         Issue issue = findIssueById(id);
         verifyIssueAccess(issue, currentUser);
         issueRepository.delete(issue);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<IssueResponse> searchIssues(String query, User currentUser, Pageable pageable) {
+        if (currentUser.getRole() == Role.ADMIN) {
+            return issueRepository.searchIssues(query, pageable).map(IssueResponse::from);
+        }
+        return issueRepository.searchAccessibleIssues(currentUser, query, pageable).map(IssueResponse::from);
     }
 
     @Transactional(readOnly = true)
