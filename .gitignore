@@ -1,0 +1,60 @@
+# ─── Secrets & Environment ───────────────────────────────────────────────────
+# NEVER commit the real .env — it contains passwords and JWT secrets
+.env
+# .env.example IS committed (safe placeholder values only)
+
+# ─── Backend (Maven / Java) ──────────────────────────────────────────────────
+jira-lite/target/
+jira-lite/HELP.md
+jira-lite/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+
+# ─── Frontend (Node.js / Vite) ───────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.env*.local
+
+# ─── Scratch / Test Scripts ──────────────────────────────────────────────────
+# scratch/ contains ad-hoc test scripts that may hold credentials
+scratch/
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── IDE & Editor ────────────────────────────────────────────────────────────
+.idea/
+*.iws
+*.iml
+*.ipr
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+.sts4-cache/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Docker volumes / local data ─────────────────────────────────────────────
+postgres-data/
+redis-data/

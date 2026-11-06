@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  cache:
+    type: none
+  mail:
+    host: localhost
+    port: 25
+
+app:
+  jwt:
+    secret: dGVzdF9zZWNyZXRfa2V5X2Zvcl9qd3RfdG9rZW5fZ2VuZXJhdGlvbl8yMDI2X2xvbmdfZW5vdWdo
+    expiration-ms: 3600000
+

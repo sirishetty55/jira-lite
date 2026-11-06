@@ -1,0 +1,73 @@
+services:
+  # ── PostgreSQL Database ─────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: jiralite-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jiralite
+      POSTGRES_USER: jiralite
+      POSTGRES_PASSWORD: jiralite_secure_password
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jiralite -d jiralite"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis Cache ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: jiralite-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend Spring Boot Service ─────────────────────────────
+  backend:
+    build:
+      context: ./jira-lite
+      dockerfile: Dockerfile
+    container_name: jiralite-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/jiralite
+      DB_USERNAME: jiralite
+      DB_PASSWORD: jiralite_secure_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: bXlfc3VwZXJfc2VjcmV0X2tleV9mb3Jfand0X3Rva2VuX2dlbmVyYXRpb25fMjAyNg==
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Frontend React + Nginx Service ──────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: jiralite-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+

@@ -1,0 +1,18 @@
+package com.jiralite.repository;
+
+import com.jiralite.entity.ActivityLog;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> {
+
+    Page<ActivityLog> findByProjectIdOrderByCreatedAtDesc(Long projectId, Pageable pageable);
+
+    Page<ActivityLog> findByIssueIdOrderByCreatedAtDesc(Long issueId, Pageable pageable);
+
+    Page<ActivityLog> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+}
+
