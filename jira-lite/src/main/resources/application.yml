@@ -8,8 +8,8 @@ spring:
   # ── PostgreSQL ──────────────────────────────────────────────
   datasource:
     url: jdbc:postgresql://localhost:5432/jiralite
-    username: ${DB_USERNAME:jiralite}
-    password: ${DB_PASSWORD:jiralite}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -60,7 +60,7 @@ spring:
 # ── JWT Configuration ──────────────────────────────────────
 app:
   jwt:
-    secret: ${JWT_SECRET:bXlfc3VwZXJfc2VjcmV0X2tleV9mb3Jfand0X3Rva2VuX2dlbmVyYXRpb25fMjAyNg==}
+    secret: ${JWT_SECRET}
     expiration-ms: 86400000   # 24 hours
 
 # ── Swagger / OpenAPI ──────────────────────────────────────
