@@ -117,66 +117,44 @@ The following diagram illustrates the complete end-to-end request lifecycle and 
 
 ```mermaid
 flowchart TD
-    subgraph Client["Client Tier · React 19 + TypeScript + Vite 8"]
+    subgraph Client["Frontend · React 19 + TypeScript + Vite 8"]
         direction TB
-        UI["UI Components & Pages<br/><i>Tailwind CSS v4 · Lucide Icons</i>"]
-        CTX["AuthContext<br/><i>JWT State &amp; LocalStorage Sync</i>"]
-        AXIOS["Axios API Client<br/><i>Bearer Token Request Interceptor</i>"]
+        UI["UI Pages & Components<br/>Tailwind CSS v4 · Lucide Icons"]
+        CTX["AuthContext<br/>JWT State & LocalStorage"]
+        AXIOS["Axios API Client<br/>Bearer Token Interceptor"]
         UI --> CTX
         CTX --> AXIOS
     end
 
-    subgraph Ingress["Security &amp; Ingress Tier"]
+    subgraph Ingress["Security & Ingress Tier"]
         direction TB
-        CORS["CORS Filter<br/><i>WebConfig (allowed origins, methods)</i>"]
-        JWT_FILTER["JwtAuthenticationFilter<br/><i>Bearer Token Extraction &amp; Signature Validation</i>"]
-        AUTH_MGR["AuthenticationManager<br/><i>CustomUserDetailsService + BCrypt</i>"]
+        CORS["CORS Filter (WebConfig)"]
+        JWT_FILTER["JwtAuthenticationFilter<br/>Bearer Token Extraction & Validation"]
+        AUTH_MGR["AuthenticationManager<br/>CustomUserDetailsService + BCrypt"]
         CORS --> JWT_FILTER
         JWT_FILTER --> AUTH_MGR
     end
 
     subgraph Backend["Application Tier · Spring Boot 4.1.1 (Java 21)"]
         direction TB
-        subgraph Controllers["REST Controllers"]
-            C_AUTH["AuthController"]
-            C_PROJ["ProjectController"]
-            C_ISS["IssueController"]
-            C_COMM["CommentController"]
-            C_NOTIF["NotificationController"]
-            C_DASH["DashboardController"]
-            C_USER["UserController"]
-        end
-
-        subgraph Services["Service Layer · @Transactional · @PreAuthorize"]
-            S_AUTH["AuthService"]
-            S_PROJ["ProjectService"]
-            S_ISS["IssueService (@Version)"]
-            S_COMM["CommentService"]
-            S_NOTIF["NotificationService"]
-            S_DASH["DashboardService"]
-            S_ACT["ActivityLogService"]
-        end
-
-        subgraph Repos["Data Access Layer"]
-            R_JPA["Spring Data JPA Repositories<br/><i>UserRepository · ProjectRepository · IssueRepository<br/>CommentRepository · NotificationRepository · ActivityLogRepository</i>"]
-        end
-
-        Controllers --> Services
-        Services --> Repos
+        CTRL["REST Controllers (7 Controllers)<br/>Auth · Project · Issue · Comment · Notification · Dashboard · User"]
+        SVC["Service Layer (@Transactional · @PreAuthorize)<br/>Auth · Project · Issue (@Version) · Comment · Notification · Dashboard"]
+        REPO["Data Access Layer<br/>7 Spring Data JPA Repositories + Custom JPQL"]
+        CTRL --> SVC
+        SVC --> REPO
     end
 
-    subgraph CacheStore["Caching Tier"]
-        REDIS[("Redis 7<br/><i>Spring Cache Abstraction<br/>BasicPolymorphicTypeValidator</i>")]
-    end
-
-    subgraph DataStore["Persistence Tier"]
-        PG[("PostgreSQL 16<br/><i>8 Relational Tables · Foreign Keys · B-tree Indexes</i>")]
+    subgraph Storage["Storage Tier"]
+        REDIS[("Redis 7<br/>Spring Cache (BasicPolymorphicTypeValidator)")]
+        PG[("PostgreSQL 16<br/>8 Relational Tables with Constraints & Indexes")]
     end
 
     AXIOS -->|HTTP REST / JSON| CORS
-    AUTH_MGR --> Controllers
-    Services <-->|@Cacheable / @CacheEvict| REDIS
-    Repos <-->|Hibernate ORM / JPQL| PG
+    AUTH_MGR --> CTRL
+    SVC -->|Cache Read / Evict| REDIS
+    REDIS -.->|Cached Data| SVC
+    REPO -->|Hibernate ORM / JPQL| PG
+    PG -.->|Query Results| REPO
 ```
 
 ### Request Lifecycle
