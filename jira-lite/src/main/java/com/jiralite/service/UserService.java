@@ -39,7 +39,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Page<UserResponse> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable).map(UserResponse::from);
+        return userRepository.findByActiveTrue(pageable).map(UserResponse::from);
     }
 
     @Transactional
