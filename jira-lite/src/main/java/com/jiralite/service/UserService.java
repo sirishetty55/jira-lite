@@ -5,6 +5,7 @@ import com.jiralite.entity.User;
 import com.jiralite.exception.BadRequestException;
 import com.jiralite.exception.ResourceNotFoundException;
 import com.jiralite.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -42,6 +43,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = "dashboard", allEntries = true)
     public void deleteUser(Long id, User currentUser) {
         if (currentUser != null && currentUser.getId().equals(id)) {
             throw new BadRequestException("You cannot deactivate your own account");

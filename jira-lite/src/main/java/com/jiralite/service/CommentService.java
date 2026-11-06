@@ -10,6 +10,7 @@ import com.jiralite.exception.BadRequestException;
 import com.jiralite.exception.ResourceNotFoundException;
 import com.jiralite.model.Role;
 import com.jiralite.repository.CommentRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ public class CommentService {
     }
 
     @Transactional
+    @CacheEvict(value = "issues", key = "#issueId")
     public CommentResponse addComment(Long issueId, CreateCommentRequest request, User currentUser) {
         Issue issue = issueService.findIssueById(issueId);
 
@@ -112,6 +114,7 @@ public class CommentService {
     }
 
     @Transactional
+    @CacheEvict(value = "issues", allEntries = true)
     public void deleteComment(Long issueId, Long commentId, User currentUser) {
         Comment comment = findCommentById(commentId);
         if (issueId != null && !comment.getIssue().getId().equals(issueId)) {
@@ -125,6 +128,7 @@ public class CommentService {
     }
 
     @Transactional
+    @CacheEvict(value = "issues", allEntries = true)
     public void deleteComment(Long commentId, User currentUser) {
         deleteComment(null, commentId, currentUser);
     }
