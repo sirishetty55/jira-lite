@@ -24,6 +24,7 @@ public class ErrorResponse {
     private String message;
     private String path;
     private LocalDateTime timestamp;
+    private String correlationId;
     private List<FieldError> fieldErrors;
 
     @Data

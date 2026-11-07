@@ -9,6 +9,9 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+    properties:
+      hibernate:
+        generate_statistics: true
   cache:
     type: none
   mail:
@@ -25,4 +28,24 @@ app:
   # Seeding is disabled in unit tests to avoid requiring SEED_* env vars
   seed:
     enabled: false
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [traceId=%X{correlationId}] %-5level %logger{36} - %msg%n"
+
+management:
+  health:
+    mail:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+    prometheus:
+      enabled: true
 

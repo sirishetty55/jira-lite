@@ -8,6 +8,7 @@ import com.jiralite.model.IssueType;
 import com.jiralite.model.Priority;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -21,34 +22,48 @@ import java.util.Optional;
 @Repository
 public interface IssueRepository extends JpaRepository<Issue, Long>, JpaSpecificationExecutor<Issue> {
 
+    @Override
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
+    Optional<Issue> findById(Long id);
+
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     Optional<Issue> findByIssueKey(String issueKey);
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     Page<Issue> findByProject(Project project, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     Page<Issue> findByAssignee(User assignee, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     Page<Issue> findByReporter(User reporter, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     Page<Issue> findByProjectAndStatus(Project project, IssueStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     Page<Issue> findByProjectAndPriority(Project project, Priority priority, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     Page<Issue> findByProjectAndType(Project project, IssueType type, Pageable pageable);
 
     @Query("SELECT COALESCE(MAX(i.issueNumber), 0) FROM Issue i WHERE i.project = :project")
     Long findMaxIssueNumberByProject(@Param("project") Project project);
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     @Query("SELECT i FROM Issue i WHERE LOWER(i.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(i.description) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(i.issueKey) LIKE LOWER(CONCAT('%', :query, '%'))")
     Page<Issue> searchIssues(@Param("query") String query, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     @Query("SELECT i FROM Issue i WHERE i.project = :project AND (" +
            "LOWER(i.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(i.description) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(i.issueKey) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<Issue> searchIssuesByProject(@Param("project") Project project, @Param("query") String query, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     @Query("SELECT i FROM Issue i WHERE (i.project.owner = :user OR EXISTS " +
            "(SELECT pm FROM ProjectMember pm WHERE pm.project = i.project AND pm.user = :user)) AND (" +
            "LOWER(i.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
@@ -81,8 +96,9 @@ public interface IssueRepository extends JpaRepository<Issue, Long>, JpaSpecific
     @Query("SELECT COUNT(i) FROM Issue i WHERE i.assignee = :user AND i.dueDate < :today AND i.status NOT IN ('RESOLVED','CLOSED')")
     long countOverdueByAssignee(@Param("user") User user, @Param("today") LocalDate today);
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     List<Issue> findTop10ByOrderByCreatedAtDesc();
 
+    @EntityGraph(attributePaths = {"project", "reporter", "assignee"})
     List<Issue> findTop10ByAssigneeOrderByCreatedAtDesc(User assignee);
 }
-

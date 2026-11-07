@@ -40,12 +40,18 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
 
+        String correlationId = (String) request.getAttribute(CorrelationIdFilter.CORRELATION_ID_REQUEST_ATTR);
+        if (correlationId == null) {
+            correlationId = org.slf4j.MDC.get(CorrelationIdFilter.CORRELATION_ID_MDC_KEY);
+        }
+
         ErrorResponse body = ErrorResponse.builder()
                 .status(HttpStatus.UNAUTHORIZED.value())
                 .error("Unauthorized")
                 .message("Authentication is required to access this resource")
                 .path(request.getRequestURI())
                 .timestamp(LocalDateTime.now())
+                .correlationId(correlationId)
                 .build();
 
         objectMapper.writeValue(response.getOutputStream(), body);

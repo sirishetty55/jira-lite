@@ -40,6 +40,7 @@ public class GlobalExceptionHandler {
                 .message("One or more fields have invalid values")
                 .path(request.getRequestURI())
                 .timestamp(LocalDateTime.now())
+                .correlationId(extractCorrelationId(request))
                 .fieldErrors(fieldErrors)
                 .build();
 
@@ -114,8 +115,17 @@ public class GlobalExceptionHandler {
                 .message(message)
                 .path(request.getRequestURI())
                 .timestamp(LocalDateTime.now())
+                .correlationId(extractCorrelationId(request))
                 .build();
         return ResponseEntity.status(status).body(body);
+    }
+
+    private String extractCorrelationId(HttpServletRequest request) {
+        String correlationId = (String) request.getAttribute(com.jiralite.security.CorrelationIdFilter.CORRELATION_ID_REQUEST_ATTR);
+        if (correlationId == null) {
+            correlationId = org.slf4j.MDC.get(com.jiralite.security.CorrelationIdFilter.CORRELATION_ID_MDC_KEY);
+        }
+        return correlationId;
     }
 }
 

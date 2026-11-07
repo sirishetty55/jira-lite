@@ -1,7 +1,9 @@
 package com.jiralite.config;
 
+import com.jiralite.security.CorrelationIdFilter;
 import com.jiralite.security.JwtAuthenticationEntryPoint;
 import com.jiralite.security.JwtAuthenticationFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 
 /**
  * Spring Security configuration: stateless JWT, public/protected endpoints.
@@ -27,11 +30,21 @@ public class SecurityConfig {
 
     private final JwtAuthenticationEntryPoint entryPoint;
     private final JwtAuthenticationFilter jwtFilter;
+    private final CorrelationIdFilter correlationIdFilter;
 
     public SecurityConfig(JwtAuthenticationEntryPoint entryPoint,
-                          JwtAuthenticationFilter jwtFilter) {
+                          JwtAuthenticationFilter jwtFilter,
+                          CorrelationIdFilter correlationIdFilter) {
         this.entryPoint = entryPoint;
         this.jwtFilter = jwtFilter;
+        this.correlationIdFilter = correlationIdFilter;
+    }
+
+    @Bean
+    public FilterRegistrationBean<CorrelationIdFilter> correlationIdFilterRegistration(CorrelationIdFilter filter) {
+        FilterRegistrationBean<CorrelationIdFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     @Bean
@@ -47,12 +60,13 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Admin-only
-                        .requestMatchers("/actuator/**").hasRole("ADMIN")
+                        // Admin-only: Prometheus metrics, Actuator management, Admin user management
+                        .requestMatchers("/actuator/prometheus", "/actuator/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
                         // Everything else requires authentication
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(correlationIdFilter, SecurityContextHolderFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Project CRUD and membership management.
@@ -109,15 +111,33 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public Page<ProjectResponse> getAllProjects(User currentUser, Pageable pageable) {
-        Page<Project> projects;
-        if (currentUser.getRole() == Role.ADMIN) {
-            projects = projectRepository.findAll(pageable);
-        } else {
-            projects = projectRepository.findProjectsByMember(currentUser, pageable);
+        Page<Project> projects = (currentUser.getRole() == Role.ADMIN)
+                ? projectRepository.findAll(pageable)
+                : projectRepository.findProjectsByMember(currentUser, pageable);
+
+        if (projects.isEmpty()) {
+            return projects.map(p -> ProjectResponse.from(p, 0, 0));
         }
-        return projects.map(p -> ProjectResponse.from(p,
-                projectRepository.countMembersByProjectId(p.getId()),
-                projectRepository.countIssuesByProjectId(p.getId())));
+
+        List<Long> projectIds = projects.map(Project::getId).getContent();
+
+        Map<Long, Long> memberCounts = projectRepository.countMembersByProjectIds(projectIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> ((Number) row[1]).longValue()
+                ));
+
+        Map<Long, Long> issueCounts = projectRepository.countIssuesByProjectIds(projectIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> ((Number) row[1]).longValue()
+                ));
+
+        return projects.map(p -> ProjectResponse.from(
+                p,
+                memberCounts.getOrDefault(p.getId(), 0L),
+                issueCounts.getOrDefault(p.getId(), 0L)
+        ));
     }
 
     @Transactional

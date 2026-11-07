@@ -90,16 +90,18 @@ logging:
     org.springframework.security: INFO
     org.hibernate.SQL: WARN
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [traceId=%X{correlationId}] %-5level %logger{36} - %msg%n"
 
 # -- Actuator & Health Checks ------------------------------------
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when-authorized
       probes:
         enabled: true
+    prometheus:
+      enabled: true
