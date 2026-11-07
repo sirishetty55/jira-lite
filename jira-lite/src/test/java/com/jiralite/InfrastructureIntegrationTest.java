@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -19,15 +20,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Automatically skipped during local workstation unit test runs where CI is not set.
  */
 @SpringBootTest
+@ActiveProfiles("test")
 @EnabledIfEnvironmentVariable(named = "CI", matches = "true")
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:postgresql://localhost:5432/jiralite",
+        "spring.datasource.url=jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:jiralite}",
+        "spring.datasource.username=${DB_USERNAME:jiralite}",
+        "spring.datasource.password=${DB_PASSWORD:}",
         "spring.datasource.driver-class-name=org.postgresql.Driver",
         "spring.jpa.hibernate.ddl-auto=update",
-        "spring.data.redis.host=localhost",
-        "spring.data.redis.port=6379",
+        "spring.data.redis.host=${REDIS_HOST:localhost}",
+        "spring.data.redis.port=${REDIS_PORT:6379}",
         "spring.cache.type=redis",
-        "app.jwt.secret=bXlfc3VwZXJfc2VjcmV0X2tleV9mb3Jfand0X3Rva2VuX2dlbmVyYXRpb25fMjAyNg=="
+        "spring.flyway.enabled=true"
 })
 class InfrastructureIntegrationTest {
 
@@ -54,4 +58,3 @@ class InfrastructureIntegrationTest {
         }
     }
 }
-

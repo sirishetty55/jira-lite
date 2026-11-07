@@ -46,6 +46,8 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      connect-timeout: 2000ms
 
   # -- Cache -------------------------------------------------------
   cache:
@@ -94,6 +96,9 @@ logging:
 
 # -- Actuator & Health Checks ------------------------------------
 management:
+  health:
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
